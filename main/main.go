@@ -189,6 +189,7 @@ func buyCoffee(m Machine,c Coffee, bal int) (Machine, int) {
 								str = strings.Replace(str,"_","█",1)
 								fmt.Printf("\r"+str)
 							}
+							addHistory(c)
 							fmt.Printf("\r##### Ваш " + string(colorYellow)+c.name +string(colorReset)+ " готов #####")
 						} else
 						{ fmt.Println("Недостаточно денег") }
@@ -310,13 +311,52 @@ func clearScr() {
 		clear.Run()
 	}
 }
+func addHistory(c Coffee){
+	out := bytes.Buffer{}
+	out.WriteString(strconv.Itoa(time.Now().Year()) + "-" + time.Now().Month().String() +"-"+ strconv.Itoa(time.Now().Day()) + " " + c.name + " " + strconv.Itoa(c.price) + "\n")
+	f, err := os.OpenFile("history", os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
 
+	io.WriteString(f, out.String())
+	f.Close()
+}
+func getHistory(){
+	f, err := os.Open("history")
+	if err != nil {
+		panic(err)
+	}
+
+	c, err := ioutil.ReadAll(f)
+	if err != nil {
+		panic(err)
+	}
+
+	arr := strings.Split(string(c),"\n")
+	buyed := len(arr)-1
+	cashAmount := 0
+	for i:= 0;i < len(arr)-1;i++{
+		str := strings.Fields(arr[i])
+		temp, err := strconv.Atoi(str[2])
+		if err != nil {
+			// handle error
+			fmt.Println(err)
+			os.Exit(2)
+		}
+		cashAmount += temp
+	}
+	fmt.Println(string(c))
+	fmt.Println("Всего куплено: " + getNumber(buyed) + " кофе на сумму " + getNumber(cashAmount) + "p\n" +
+		"Нажмите Enter для продолжения...")
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
+}
 
 func main(){
 	var machine Machine
 	machine = getAll()
 	getSettings()
-	fmt.Println("##### Вас приветствует кофе машина RadCoffee v1.3 #####")
+	fmt.Println("##### Кофе машина RadCoffee v1.5 #####")
 	time.Sleep(time.Second)
 	bal := 0
 	for start := true; start == true;{
@@ -368,11 +408,12 @@ func main(){
 		case 2: // ТЕХ ОБСЛУЖИВАНИЕ
 			clearScr()
 			fmt.Println("1) Статус\n" +
-				"2) Забрать деньги\n" +
-				"3) Пополнить запасы кофе\n" +
-				"4) Пополнить запасы молока\n" +
-				"5) Пополнить запасы сахара\n" +
-				"6) Пополнить запасы стаканчиков")
+							"2) Забрать деньги\n" +
+							"3) Пополнить запасы кофе\n" +
+							"4) Пополнить запасы молока\n" +
+							"5) Пополнить запасы сахара\n" +
+							"6) Пополнить запасы стаканчиков\n" +
+							"7) История покупок")
 			fmt.Scanf("%d\n", &choice)
 			switch choice {
 			case 1:
@@ -395,11 +436,11 @@ func main(){
 			case 2:
 				clearScr()
 				fmt.Println("1) Забрать монеты по 1р\n" +
-					"2) Забрать монеты по 2р\n" +
-					"3) Забрать монеты по 5р\n" +
-					"4) Забрать монеты по 10р\n" +
-					"5) Забрать купюры по 50р\n" +
-					"6) Забрать купюры по 100р")
+								"2) Забрать монеты по 2р\n" +
+								"3) Забрать монеты по 5р\n" +
+								"4) Забрать монеты по 10р\n" +
+								"5) Забрать купюры по 50р\n" +
+								"6) Забрать купюры по 100р")
 				fmt.Scanf("%d\n", &choice)
 				fmt.Print("Кол-во: ")
 				amount := 0
@@ -477,6 +518,13 @@ func main(){
 					machine.sugar = 2000
 				}
 				break
+			case 6:
+				machine.cup += 50
+				if machine.cup > 100{
+					machine.cup = 100
+				}
+			case 7:
+				getHistory()
 			}
 			break
 
